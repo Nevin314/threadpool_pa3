@@ -25,19 +25,52 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::SubmitTask(const std::string &name, Task *task) {
     //TODO: Add task to queue, make sure to lock the queue
+    //std::cout << "called submit_task" << std::endl;
+    if (!done && task != nullptr) {
+        std::cout << "Added task: " << name << std::endl;
+        mtx.lock(); 
+        task->name = name; 
+        queue.push_back(task);
+        num_tasks_unserviced++;
+        task->running = false;
+        //std::cout << "Task " << name << " submitted." << std::endl;
+        mtx.unlock();
+    } else {
+        std::cout << "Cannot added task: " << name << " because the thread pool is stopped." << std::endl;
+    }
 }
 
 void ThreadPool::run_thread() {
     while (true) {
 
         //TODO1: if done and no tasks left, break
+        if (done && num_tasks_unserviced == 0) {
+            break;
+        }
 
         //TODO2: if no tasks left, continue
-
-       
+        if (num_tasks_unserviced == 0) {
+            continue;
+        }
         //TODO3: get task from queue, remove it from queue, and run it
+        Task* curr = nullptr;
+        mtx.lock(); // don't want two threads to run the same task at the same time
+        if (!queue.empty()) {
+            curr = queue.back();
+            std::cout << "Started task: " << curr->name << std::endl;
+            curr->running = true;
+            queue.pop_back();
+            num_tasks_unserviced--;
+        }
+
+        mtx.unlock();
 
         //TODO4: delete task
+        if (curr != nullptr) {
+            curr->Run();
+            std::cout << "Finished task: " << curr->name << std::endl;
+            delete curr;
+        }
     }
 }
 
@@ -57,4 +90,14 @@ void ThreadPool::remove_task(Task *t) {
 
 void ThreadPool::Stop() {
     //TODO: Delete threads, but remember to wait for them to finish first
+    done = true; 
+
+    std::cout << "Called Stop" << std::endl;
+    for (auto thread : threads) {
+        if (thread->joinable()) {
+            std::cout << "Stopping thread:" << thread->get_id() << std::endl;
+            thread->join();
+        }
+        // delete thread;  should be done in destructor
+    }
 }
