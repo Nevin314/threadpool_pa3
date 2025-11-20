@@ -36,7 +36,7 @@ void ThreadPool::SubmitTask(const std::string &name, Task *task) {
         //std::cout << "Task " << name << " submitted." << std::endl;
         mtx.unlock();
     } else {
-        std::cout << "Cannot added task: " << name << " because the thread pool is stopped." << std::endl;
+        std::cout << "Cannot added task to queue: " << name << " because the thread pool is stopped." << std::endl;
     }
 }
 
@@ -92,7 +92,7 @@ void ThreadPool::Stop() {
     //TODO: Delete threads, but remember to wait for them to finish first
     done = true; 
 
-    std::cout << "Called Stop" << std::endl;
+    std::cout << "Called Stop()" << std::endl;
     for (auto thread : threads) {
         if (thread->joinable()) {
             std::cout << "Stopping thread:" << thread->get_id() << std::endl;
